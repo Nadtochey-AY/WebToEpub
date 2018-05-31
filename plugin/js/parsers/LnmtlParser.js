@@ -3,7 +3,29 @@
 */
 "use strict";
 
-parserFactory.register("lnmtl.com", function() { return new LnmtlParser() });
+//parserFactory.register("lnmtl.com", function() { return new LnmtlParser() });
+
+var urlGlobal;
+
+parserFactory.registerRule(
+    // return probability (0.0 to 1.0) web page is a Blogspot page
+    function(url, dom) {
+		urlGlobal=url;
+		
+        return ((util.extractHostName(url).indexOf("translate.ru") != -1) &&
+            ((url.indexOf("lnmtl.com") != -1) || (url.indexOf("a2ip.ru") != -1))) ||
+			(util.extractHostName(url).indexOf("lnmtl.com") != -1) ||
+			(util.extractHostName(url).indexOf("a2ip.ru") != -1);
+    },
+    function() { return new LnmtlParser() }
+);
+
+/*
+parserFactory.registerManualSelect(
+    "LNMTL", 
+    function() { return new LnmtlParser() }
+);
+*/
 
 class LnmtlParser extends Parser {
     constructor() {
@@ -31,20 +53,35 @@ class LnmtlParser extends Parser {
         return dom.querySelector("div.chapter-body");
     }
 
+	/*
     findChapterTitle(dom) {
         return dom.querySelector("h3.dashhead-title");
     }
+	*/
 
     customRawDomToContentStep(chapter, content) {
+		for(let s of content.querySelectorAll("dq")) {
+            let i = s.ownerDocument.createElement("i");
+            let b = s.ownerDocument.createElement("b");
+			s.parentNode.insertBefore(i, s);
+			i.appendChild(s);
+			i.parentNode.insertBefore(b, i);
+			b.appendChild(i);
+        }
+		
         for(let s of content.querySelectorAll("sentence")) {
             if (s.className === "original") {
-                s.remove();
+				let br = s.ownerDocument.createElement("br");
+				s.replaceWith(br);
+                //s.remove();
             } else {
+				/*
                 let p = s.ownerDocument.createElement("p");
                 p.innerText = s.innerText;
                 s.replaceWith(p);
-            }
-        } 
+				*/
+			}
+        }
     }
 
     findCoverImageUrl(dom) {
@@ -80,7 +117,9 @@ class LnmtlParser extends Parser {
     }
 
     static makeChapterListUrl(volumeId, page) {
-        return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
+		return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
+		
+		return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
     }
 
     static mergeChapterLists(lists) {
@@ -89,7 +128,8 @@ class LnmtlParser extends Parser {
             for (let page of list) {
                 for(let chapter of page.json.data) {
                     chapters.push({
-                        sourceUrl: chapter.site_url,
+                        //sourceUrl: chapter.site_url,
+                        sourceUrl: LnmtlParser.translate() + LnmtlParser.prHost() + utilLocal.extractPathname(chapter.site_url),
                         title: "#" + chapter.number + ": " + chapter.title,
                         newArc: null                    
                     });
@@ -97,5 +137,13 @@ class LnmtlParser extends Parser {
             };
         };
         return chapters;
+    }
+	
+	static translate() {
+        return utilLocal.extractProtocol(urlGlobal)+'//www.translate.ru/SiteResult.aspx?dirCode=er&templateId=general&url=';
+    }
+	
+	static prHost() {
+        return utilLocal.extractProtocol(urlGlobal) + '//' + util.extractHostName(urlGlobal);
     }
 }
