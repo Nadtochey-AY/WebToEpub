@@ -12,6 +12,14 @@ class GravityTalesParser extends Parser {
 
     getChapterUrls(dom) {
         let that = this;
+        // logic as @ 2018-06-10
+        let chaptersElement = dom.querySelector("div#chapters div.tab-content");
+        let chapters = util.hyperlinksToChapterList(chaptersElement);
+        if (0 < chapters.length) {
+            return Promise.resolve(chapters);
+        }
+
+        // older logic
         let novelId = GravityTalesParser.getNovelId(dom);
         if (novelId !== null) {
             return GravityTalesParser.fetchUrlsOfChapters(novelId, dom.baseURI, HttpClient.fetchJson); 
@@ -46,7 +54,7 @@ class GravityTalesParser extends Parser {
 
     findChapterTitle(dom) {
         return dom.querySelector("h1.entry-title") ||
-            dom.querySelector("h3");
+            dom.querySelector("h4");
     }
 
     findParentNodeOfChapterLinkToRemoveAt(link) {
@@ -169,5 +177,9 @@ class GravityTalesParser extends Parser {
             }
         }
         return null;
+    }
+
+    getInformationEpubItemChildNodes(dom) {
+        return [dom.querySelector("div.desc")];
     }
 }

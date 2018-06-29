@@ -32,6 +32,11 @@ class LnmtlParser extends Parser {
         super();
     }
 
+    populateUI(dom) {
+        super.populateUI(dom);
+        document.getElementById("removeOriginalRow").hidden = false; 
+    }
+  
     getChapterUrls(dom) {
         let volumesList = LnmtlParser.findVolumesList(dom);
         if (volumesList.length !== 0) {
@@ -70,7 +75,7 @@ class LnmtlParser extends Parser {
         }
 		
         for(let s of content.querySelectorAll("sentence")) {
-            if (s.className === "original") {
+            if (this.userPreferences.removeOriginal.value && s.className === "original") {
 				let br = s.ownerDocument.createElement("br");
 				s.replaceWith(br);
                 //s.remove();
@@ -117,9 +122,7 @@ class LnmtlParser extends Parser {
     }
 
     static makeChapterListUrl(volumeId, page) {
-		return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
-		
-		return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
+        return `http://lnmtl.com/chapter?page=${page}&volumeId=${volumeId}`;
     }
 
     static mergeChapterLists(lists) {
